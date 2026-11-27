@@ -1,0 +1,256 @@
+-- =====================================================================
+-- WaterWatch - demonstration data (generated, then frozen as plain INSERTs)
+-- Scenario: one hotel, one site, two meters, two days of readings (30-min grid).
+--   2026-11-25 : normal day
+--   2026-11-26 : night leak 01:00-04:30 (meter 1), pipe burst 14:00-14:15 (meter 1)
+--                pool top-up on meter 2 flagged by mistake (false positive)
+-- Load after schema.sql:  python init_db.py --sample
+-- =====================================================================
+PRAGMA foreign_keys = ON;
+BEGIN TRANSACTION;
+
+-- Client / site ------------------------------------------------------
+INSERT INTO clients (id, name, client_type, contact_name, contact_email, contact_phone, created_at, updated_at) VALUES
+  (1, 'Hotel Al Andalous', 'HOTEL', 'Sami Trabelsi', 'maintenance@alandalous-hotel.example', '+216 74 000 000', '2026-11-01T09:00:00Z', '2026-11-01T09:00:00Z');
+
+INSERT INTO sites (id, client_id, name, address, description, created_at, updated_at) VALUES
+  (1, 1, 'Hotel Main Building', 'Avenue Habib Bourguiba, Sfax', '60-room hotel with swimming pool and laundry', '2026-11-01T09:05:00Z', '2026-11-01T09:05:00Z');
+
+-- Meters -------------------------------------------------------------
+INSERT INTO water_meters (id, site_id, meter_name, meter_code, location_description, status, installation_date, created_at, updated_at) VALUES
+  (1, 1, 'Main Water Inlet',      'WM-HOTEL-0001', 'Technical room, ground floor',   'ACTIVE', '2026-10-15', '2026-11-01T09:10:00Z', '2026-11-01T09:10:00Z'),
+  (2, 1, 'Swimming Pool Supply',  'WM-HOTEL-0002', 'Pool pump house, garden level',  'ACTIVE', '2026-10-15', '2026-11-01T09:12:00Z', '2026-11-01T09:12:00Z');
+
+-- Thresholds (different per meter) -----------------------------------
+INSERT INTO thresholds (id, meter_id, max_flow_rate, max_daily_volume, continuous_flow_duration, enabled, created_at, updated_at) VALUES
+  (1, 1, 120.0, 20000.0,  60, 1, '2026-11-01T09:20:00Z', '2026-11-01T09:20:00Z'),
+  (2, 2,  40.0,  3000.0, 240, 1, '2026-11-01T09:21:00Z', '2026-11-01T09:21:00Z');
+
+-- Virtual ESP32 (Wokwi) and simulated valve, both on meter 1 ---------
+INSERT INTO devices (id, meter_id, device_uid, device_name, device_type, connection_status, last_seen, is_primary, created_at, updated_at) VALUES
+  (1, 1, 'VESP32-WOKWI-0001', 'Wokwi Virtual ESP32 - Main Inlet', 'VIRTUAL_ESP32', 'ONLINE', '2026-11-27T08:59:45Z', 1, '2026-11-01T09:30:00Z', '2026-11-27T08:59:45Z');
+
+INSERT INTO valves (id, meter_id, device_id, valve_name, valve_status, control_mode, last_status_update, is_primary, created_at, updated_at) VALUES
+  (1, 1, 1, 'Main Inlet Shut-off Valve (simulated)', 'OPEN', 'AUTOMATIC', '2026-11-26T15:50:04Z', 1, '2026-11-01T09:35:00Z', '2026-11-26T15:50:04Z');
+
+-- Readings: meter 1, main inlet - day 1 normal, day 2 leak + burst (flow_rate in L/min, total_volume in liters)
+INSERT INTO readings (meter_id, timestamp, flow_rate, total_volume, source) VALUES
+  (1, '2026-11-25T00:00:00Z', 0, 154320.0, 'SIMULATION'),
+  (1, '2026-11-25T00:30:00Z', 0, 154320.0, 'SIMULATION'),
+  (1, '2026-11-25T01:00:00Z', 1.5, 154320.0, 'SIMULATION'),
+  (1, '2026-11-25T01:30:00Z', 1.5, 154365.0, 'SIMULATION'),
+  (1, '2026-11-25T02:00:00Z', 2.0, 154410.0, 'SIMULATION'),
+  (1, '2026-11-25T02:30:00Z', 0, 154470.0, 'SIMULATION'),
+  (1, '2026-11-25T03:00:00Z', 0, 154470.0, 'SIMULATION'),
+  (1, '2026-11-25T03:30:00Z', 1.5, 154470.0, 'SIMULATION'),
+  (1, '2026-11-25T04:00:00Z', 1.5, 154515.0, 'SIMULATION'),
+  (1, '2026-11-25T04:30:00Z', 1.5, 154560.0, 'SIMULATION'),
+  (1, '2026-11-25T05:00:00Z', 0, 154605.0, 'SIMULATION'),
+  (1, '2026-11-25T05:30:00Z', 1.5, 154605.0, 'SIMULATION'),
+  (1, '2026-11-25T06:00:00Z', 22.6, 154650.0, 'SIMULATION'),
+  (1, '2026-11-25T06:30:00Z', 24.8, 155328.0, 'SIMULATION'),
+  (1, '2026-11-25T07:00:00Z', 25.2, 156072.0, 'SIMULATION'),
+  (1, '2026-11-25T07:30:00Z', 25.0, 156828.0, 'SIMULATION'),
+  (1, '2026-11-25T08:00:00Z', 23.0, 157578.0, 'SIMULATION'),
+  (1, '2026-11-25T08:30:00Z', 18.9, 158268.0, 'SIMULATION'),
+  (1, '2026-11-25T09:00:00Z', 23.4, 158835.0, 'SIMULATION'),
+  (1, '2026-11-25T09:30:00Z', 17.3, 159537.0, 'SIMULATION'),
+  (1, '2026-11-25T10:00:00Z', 12.5, 160056.0, 'SIMULATION'),
+  (1, '2026-11-25T10:30:00Z', 9.6, 160431.0, 'SIMULATION'),
+  (1, '2026-11-25T11:00:00Z', 12.5, 160719.0, 'SIMULATION'),
+  (1, '2026-11-25T11:30:00Z', 11.5, 161094.0, 'SIMULATION'),
+  (1, '2026-11-25T12:00:00Z', 11.4, 161439.0, 'SIMULATION'),
+  (1, '2026-11-25T12:30:00Z', 7.7, 161781.0, 'SIMULATION'),
+  (1, '2026-11-25T13:00:00Z', 8.0, 162012.0, 'SIMULATION'),
+  (1, '2026-11-25T13:30:00Z', 13.8, 162252.0, 'SIMULATION'),
+  (1, '2026-11-25T14:00:00Z', 13.4, 162666.0, 'SIMULATION'),
+  (1, '2026-11-25T14:30:00Z', 12.4, 163068.0, 'SIMULATION'),
+  (1, '2026-11-25T15:00:00Z', 14.0, 163440.0, 'SIMULATION'),
+  (1, '2026-11-25T15:30:00Z', 10.1, 163860.0, 'SIMULATION'),
+  (1, '2026-11-25T16:00:00Z', 6.6, 164163.0, 'SIMULATION'),
+  (1, '2026-11-25T16:30:00Z', 8.7, 164361.0, 'SIMULATION'),
+  (1, '2026-11-25T17:00:00Z', 18.6, 164622.0, 'SIMULATION'),
+  (1, '2026-11-25T17:30:00Z', 15.9, 165180.0, 'SIMULATION'),
+  (1, '2026-11-25T18:00:00Z', 17.6, 165657.0, 'SIMULATION'),
+  (1, '2026-11-25T18:30:00Z', 21.8, 166185.0, 'SIMULATION'),
+  (1, '2026-11-25T19:00:00Z', 20.0, 166839.0, 'SIMULATION'),
+  (1, '2026-11-25T19:30:00Z', 18.8, 167439.0, 'SIMULATION'),
+  (1, '2026-11-25T20:00:00Z', 13.2, 168003.0, 'SIMULATION'),
+  (1, '2026-11-25T20:30:00Z', 20.1, 168399.0, 'SIMULATION'),
+  (1, '2026-11-25T21:00:00Z', 16.6, 169002.0, 'SIMULATION'),
+  (1, '2026-11-25T21:30:00Z', 17.2, 169500.0, 'SIMULATION'),
+  (1, '2026-11-25T22:00:00Z', 17.0, 170016.0, 'SIMULATION'),
+  (1, '2026-11-25T22:30:00Z', 18.9, 170526.0, 'SIMULATION'),
+  (1, '2026-11-25T23:00:00Z', 3.0, 171093.0, 'SIMULATION'),
+  (1, '2026-11-25T23:30:00Z', 1.5, 171183.0, 'SIMULATION'),
+  (1, '2026-11-26T00:00:00Z', 1.5, 171228.0, 'SIMULATION'),
+  (1, '2026-11-26T00:30:00Z', 1.5, 171273.0, 'SIMULATION'),
+  (1, '2026-11-26T01:00:00Z', 18.2, 171318.0, 'SIMULATION'),
+  (1, '2026-11-26T01:30:00Z', 18.9, 171864.0, 'SIMULATION'),
+  (1, '2026-11-26T02:00:00Z', 18.2, 172431.0, 'SIMULATION'),
+  (1, '2026-11-26T02:30:00Z', 18.1, 172977.0, 'SIMULATION'),
+  (1, '2026-11-26T03:00:00Z', 18.7, 173520.0, 'SIMULATION'),
+  (1, '2026-11-26T03:30:00Z', 17.1, 174081.0, 'SIMULATION'),
+  (1, '2026-11-26T04:00:00Z', 17.7, 174594.0, 'SIMULATION'),
+  (1, '2026-11-26T04:30:00Z', 18.1, 175125.0, 'SIMULATION'),
+  (1, '2026-11-26T05:00:00Z', 1.5, 175668.0, 'SIMULATION'),
+  (1, '2026-11-26T05:30:00Z', 0, 175713.0, 'SIMULATION'),
+  (1, '2026-11-26T06:00:00Z', 22.9, 175713.0, 'SIMULATION'),
+  (1, '2026-11-26T06:30:00Z', 25.2, 176400.0, 'SIMULATION'),
+  (1, '2026-11-26T07:00:00Z', 25.8, 177156.0, 'SIMULATION'),
+  (1, '2026-11-26T07:30:00Z', 27.6, 177930.0, 'SIMULATION'),
+  (1, '2026-11-26T08:00:00Z', 22.3, 178758.0, 'SIMULATION'),
+  (1, '2026-11-26T08:30:00Z', 24.0, 179427.0, 'SIMULATION'),
+  (1, '2026-11-26T09:00:00Z', 24.6, 180147.0, 'SIMULATION'),
+  (1, '2026-11-26T09:30:00Z', 21.2, 180885.0, 'SIMULATION'),
+  (1, '2026-11-26T10:00:00Z', 7.1, 181521.0, 'SIMULATION'),
+  (1, '2026-11-26T10:30:00Z', 13.1, 181734.0, 'SIMULATION'),
+  (1, '2026-11-26T11:00:00Z', 12.8, 182127.0, 'SIMULATION'),
+  (1, '2026-11-26T11:30:00Z', 7.0, 182511.0, 'SIMULATION'),
+  (1, '2026-11-26T12:00:00Z', 11.6, 182721.0, 'SIMULATION'),
+  (1, '2026-11-26T12:30:00Z', 11.4, 183069.0, 'SIMULATION'),
+  (1, '2026-11-26T13:00:00Z', 11.7, 183411.0, 'SIMULATION'),
+  (1, '2026-11-26T13:30:00Z', 13.7, 183762.0, 'SIMULATION'),
+  (1, '2026-11-26T14:00:00Z', 185.0, 184173.0, 'SIMULATION'),
+  (1, '2026-11-26T14:05:00Z', 187.2, 185098.0, 'SIMULATION'),
+  (1, '2026-11-26T14:10:00Z', 184.5, 186034.0, 'SIMULATION'),
+  (1, '2026-11-26T14:15:00Z', 186.0, 186956.5, 'SIMULATION'),
+  (1, '2026-11-26T14:15:05Z', 0.0, 186972.0, 'SIMULATION'),
+  (1, '2026-11-26T14:30:00Z', 0.0, 186972.0, 'SIMULATION'),
+  (1, '2026-11-26T15:00:00Z', 0.0, 186972.0, 'SIMULATION'),
+  (1, '2026-11-26T15:30:00Z', 0.0, 186972.0, 'SIMULATION'),
+  (1, '2026-11-26T15:50:10Z', 9.5, 186972.0, 'SIMULATION'),
+  (1, '2026-11-26T16:00:00Z', 10.4, 187065.4, 'SIMULATION'),
+  (1, '2026-11-26T16:30:00Z', 11.2, 187377.4, 'SIMULATION'),
+  (1, '2026-11-26T17:00:00Z', 20.0, 187713.4, 'SIMULATION'),
+  (1, '2026-11-26T17:30:00Z', 21.0, 188313.4, 'SIMULATION'),
+  (1, '2026-11-26T18:00:00Z', 17.0, 188943.4, 'SIMULATION'),
+  (1, '2026-11-26T18:30:00Z', 15.0, 189453.4, 'SIMULATION'),
+  (1, '2026-11-26T19:00:00Z', 21.3, 189903.4, 'SIMULATION'),
+  (1, '2026-11-26T19:30:00Z', 13.1, 190542.4, 'SIMULATION'),
+  (1, '2026-11-26T20:00:00Z', 14.5, 190935.4, 'SIMULATION'),
+  (1, '2026-11-26T20:30:00Z', 21.8, 191370.4, 'SIMULATION'),
+  (1, '2026-11-26T21:00:00Z', 22.6, 192024.4, 'SIMULATION'),
+  (1, '2026-11-26T21:30:00Z', 21.0, 192702.4, 'SIMULATION'),
+  (1, '2026-11-26T22:00:00Z', 22.3, 193332.4, 'SIMULATION'),
+  (1, '2026-11-26T22:30:00Z', 16.6, 194001.4, 'SIMULATION'),
+  (1, '2026-11-26T23:00:00Z', 1.8, 194499.4, 'SIMULATION'),
+  (1, '2026-11-26T23:30:00Z', 3.8, 194553.4, 'SIMULATION');
+
+-- Readings: meter 2, pool supply - normal on both days (flow_rate in L/min, total_volume in liters)
+INSERT INTO readings (meter_id, timestamp, flow_rate, total_volume, source) VALUES
+  (2, '2026-11-25T00:00:00Z', 0.0, 48210.5, 'SIMULATION'),
+  (2, '2026-11-25T00:30:00Z', 0.0, 48210.5, 'SIMULATION'),
+  (2, '2026-11-25T01:00:00Z', 0.0, 48210.5, 'SIMULATION'),
+  (2, '2026-11-25T01:30:00Z', 0.0, 48210.5, 'SIMULATION'),
+  (2, '2026-11-25T02:00:00Z', 0.0, 48210.5, 'SIMULATION'),
+  (2, '2026-11-25T02:30:00Z', 0.0, 48210.5, 'SIMULATION'),
+  (2, '2026-11-25T03:00:00Z', 0.0, 48210.5, 'SIMULATION'),
+  (2, '2026-11-25T03:30:00Z', 0.0, 48210.5, 'SIMULATION'),
+  (2, '2026-11-25T04:00:00Z', 0.0, 48210.5, 'SIMULATION'),
+  (2, '2026-11-25T04:30:00Z', 0.0, 48210.5, 'SIMULATION'),
+  (2, '2026-11-25T05:00:00Z', 0.0, 48210.5, 'SIMULATION'),
+  (2, '2026-11-25T05:30:00Z', 0.0, 48210.5, 'SIMULATION'),
+  (2, '2026-11-25T06:00:00Z', 0.0, 48210.5, 'SIMULATION'),
+  (2, '2026-11-25T06:30:00Z', 0.0, 48210.5, 'SIMULATION'),
+  (2, '2026-11-25T07:00:00Z', 0.0, 48210.5, 'SIMULATION'),
+  (2, '2026-11-25T07:30:00Z', 0.0, 48210.5, 'SIMULATION'),
+  (2, '2026-11-25T08:00:00Z', 6.3, 48210.5, 'SIMULATION'),
+  (2, '2026-11-25T08:30:00Z', 5.9, 48399.5, 'SIMULATION'),
+  (2, '2026-11-25T09:00:00Z', 6.2, 48576.5, 'SIMULATION'),
+  (2, '2026-11-25T09:30:00Z', 6.5, 48762.5, 'SIMULATION'),
+  (2, '2026-11-25T10:00:00Z', 5.8, 48957.5, 'SIMULATION'),
+  (2, '2026-11-25T10:30:00Z', 6.4, 49131.5, 'SIMULATION'),
+  (2, '2026-11-25T11:00:00Z', 5.7, 49323.5, 'SIMULATION'),
+  (2, '2026-11-25T11:30:00Z', 5.9, 49494.5, 'SIMULATION'),
+  (2, '2026-11-25T12:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T12:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T13:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T13:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T14:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T14:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T15:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T15:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T16:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T16:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T17:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T17:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T18:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T18:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T19:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T19:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T20:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T20:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T21:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T21:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T22:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T22:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T23:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-25T23:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T00:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T00:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T01:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T01:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T02:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T02:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T03:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T03:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T04:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T04:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T05:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T05:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T06:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T06:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T07:00:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T07:30:00Z', 0.0, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T08:00:00Z', 6.2, 49671.5, 'SIMULATION'),
+  (2, '2026-11-26T08:30:00Z', 6.4, 49857.5, 'SIMULATION'),
+  (2, '2026-11-26T09:00:00Z', 6.1, 50049.5, 'SIMULATION'),
+  (2, '2026-11-26T09:30:00Z', 6.4, 50232.5, 'SIMULATION'),
+  (2, '2026-11-26T10:00:00Z', 5.9, 50424.5, 'SIMULATION'),
+  (2, '2026-11-26T10:30:00Z', 5.7, 50601.5, 'SIMULATION'),
+  (2, '2026-11-26T11:00:00Z', 6.4, 50772.5, 'SIMULATION'),
+  (2, '2026-11-26T11:30:00Z', 5.6, 50964.5, 'SIMULATION'),
+  (2, '2026-11-26T12:00:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T12:30:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T13:00:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T13:30:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T14:00:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T14:30:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T15:00:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T15:30:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T16:00:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T16:30:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T17:00:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T17:30:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T18:00:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T18:30:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T19:00:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T19:30:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T20:00:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T20:30:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T21:00:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T21:30:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T22:00:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T22:30:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T23:00:00Z', 0.0, 51132.5, 'SIMULATION'),
+  (2, '2026-11-26T23:30:00Z', 0.0, 51132.5, 'SIMULATION');
+
+-- Alerts (one of each type, one of each status except NEW is the latest) ----
+INSERT INTO alerts (id, meter_id, alert_type, severity, description, detected_at, estimated_lost_volume, status, resolved_at, created_at, updated_at) VALUES
+  (1, 1, 'CONTINUOUS_FLOW', 'HIGH', 'Non-zero flow of about 18 L/min for more than 60 min during the night (expected: ~0 L/min).', '2026-11-26T02:30:00Z', 4350, 'RESOLVED', '2026-11-26T05:00:00Z', '2026-11-26T02:30:00Z', '2026-11-26T05:00:00Z'),
+  (2, 1, 'FLOW_SPIKE', 'CRITICAL', 'Flow of 185 L/min exceeds the 120 L/min limit (probable pipe burst). Automatic shut-off requested.', '2026-11-26T14:00:00Z', 2648, 'ACKNOWLEDGED', NULL, '2026-11-26T14:00:00Z', '2026-11-26T14:20:00Z'),
+  (3, 1, 'HIGH_CONSUMPTION', 'MEDIUM', 'Daily volume reached 20142 L, above the 20000 L limit.', '2026-11-26T20:30:00Z', NULL, 'NEW', NULL, '2026-11-26T20:30:00Z', '2026-11-26T20:30:00Z'),
+  (4, 2, 'LEAK', 'LOW', 'Sustained flow of about 6 L/min for 2 hours on the pool supply.', '2026-11-26T10:00:00Z', NULL, 'FALSE_POSITIVE', '2026-11-26T12:30:00Z', '2026-11-26T10:00:00Z', '2026-11-26T12:30:00Z');
+
+-- Valve commands: every status, both OPEN and CLOSE ------------------
+-- Note: the valve stays OPEN in `valves` because commands 5 and 6 are not confirmed.
+INSERT INTO valve_commands (id, valve_id, command, command_source, status, requested_at, sent_at, executed_at, error_message, created_at) VALUES
+  (1, 1, 'CLOSE', 'AUTOMATIC', 'EXPIRED',   '2026-11-26T14:00:02Z', '2026-11-26T14:00:03Z', NULL, 'No confirmation received within 30 seconds', '2026-11-26T14:00:02Z'),
+  (2, 1, 'CLOSE', 'MANUAL',    'FAILED',    '2026-11-26T14:08:10Z', '2026-11-26T14:08:11Z', NULL, 'Virtual ESP32 reported a valve actuator fault', '2026-11-26T14:08:10Z'),
+  (3, 1, 'CLOSE', 'MANUAL',    'CONFIRMED', '2026-11-26T14:14:50Z', '2026-11-26T14:14:51Z', '2026-11-26T14:15:03Z', NULL, '2026-11-26T14:14:50Z'),
+  (4, 1, 'OPEN',  'MANUAL',    'CONFIRMED', '2026-11-26T15:50:00Z', '2026-11-26T15:50:01Z', '2026-11-26T15:50:04Z', NULL, '2026-11-26T15:50:00Z'),
+  (5, 1, 'CLOSE', 'MANUAL',    'SENT',      '2026-11-27T08:50:00Z', '2026-11-27T08:50:02Z', NULL, NULL, '2026-11-27T08:50:00Z'),
+  (6, 1, 'OPEN',  'SYSTEM',    'PENDING',   '2026-11-27T08:55:00Z', NULL, NULL, NULL, '2026-11-27T08:55:00Z');
+
+COMMIT;

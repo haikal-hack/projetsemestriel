@@ -1,0 +1,109 @@
+erDiagram
+    CLIENTS ||--o{ SITES : "owns"
+    SITES ||--o{ WATER_METERS : "contains"
+    WATER_METERS ||--o{ READINGS : "records"
+    WATER_METERS ||--o{ THRESHOLDS : "configured by (1 enabled)"
+    WATER_METERS ||--o{ ALERTS : "raises"
+    WATER_METERS ||--o{ DEVICES : "read by (1 primary)"
+    WATER_METERS ||--o{ VALVES : "controlled by (1 primary)"
+    DEVICES ||--o{ VALVES : "drives"
+    VALVES ||--o{ VALVE_COMMANDS : "receives"
+
+    CLIENTS {
+        INTEGER id PK
+        TEXT name
+        TEXT client_type "HOTEL, WORKSHOP, FARM"
+        TEXT contact_name
+        TEXT contact_email
+        TEXT contact_phone
+        TEXT created_at
+        TEXT updated_at
+    }
+    SITES {
+        INTEGER id PK
+        INTEGER client_id FK
+        TEXT name "UNIQUE per client"
+        TEXT address
+        TEXT description
+        TEXT created_at
+        TEXT updated_at
+    }
+    WATER_METERS {
+        INTEGER id PK
+        INTEGER site_id FK
+        TEXT meter_name "UNIQUE per site"
+        TEXT meter_code UK
+        TEXT location_description
+        TEXT status "ACTIVE, INACTIVE"
+        TEXT installation_date
+        TEXT created_at
+        TEXT updated_at
+    }
+    READINGS {
+        INTEGER id PK
+        INTEGER meter_id FK
+        TEXT timestamp "UNIQUE with meter_id"
+        REAL flow_rate "L/min"
+        REAL total_volume "liters, cumulative"
+        TEXT source "SIMULATION, DEVICE"
+        TEXT created_at
+    }
+    THRESHOLDS {
+        INTEGER id PK
+        INTEGER meter_id FK
+        REAL max_flow_rate "L/min"
+        REAL max_daily_volume "liters"
+        INTEGER continuous_flow_duration "minutes"
+        INTEGER enabled "one enabled per meter"
+        TEXT created_at
+        TEXT updated_at
+    }
+    ALERTS {
+        INTEGER id PK
+        INTEGER meter_id FK
+        TEXT alert_type "LEAK, HIGH_CONSUMPTION, FLOW_SPIKE, CONTINUOUS_FLOW"
+        TEXT severity "LOW, MEDIUM, HIGH, CRITICAL"
+        TEXT description
+        TEXT detected_at
+        REAL estimated_lost_volume "liters, nullable"
+        TEXT status "NEW, ACKNOWLEDGED, RESOLVED, FALSE_POSITIVE"
+        TEXT resolved_at
+        TEXT created_at
+        TEXT updated_at
+    }
+    DEVICES {
+        INTEGER id PK
+        INTEGER meter_id FK
+        TEXT device_uid UK
+        TEXT device_name
+        TEXT device_type "ESP32, VIRTUAL_ESP32"
+        TEXT connection_status "ONLINE, OFFLINE"
+        TEXT last_seen
+        INTEGER is_primary "one primary per meter"
+        TEXT created_at
+        TEXT updated_at
+    }
+    VALVES {
+        INTEGER id PK
+        INTEGER meter_id FK "with device_id: same meter"
+        INTEGER device_id FK
+        TEXT valve_name "UNIQUE per meter"
+        TEXT valve_status "CONFIRMED state: OPEN, CLOSED, UNKNOWN"
+        TEXT control_mode "MANUAL, AUTOMATIC"
+        TEXT last_status_update
+        INTEGER is_primary "one primary per meter"
+        TEXT created_at
+        TEXT updated_at
+    }
+    VALVE_COMMANDS {
+        INTEGER id PK
+        INTEGER valve_id FK
+        TEXT command "OPEN, CLOSE"
+        TEXT command_source "MANUAL, AUTOMATIC, SYSTEM"
+        TEXT status "PENDING, SENT, CONFIRMED, FAILED, EXPIRED"
+        TEXT requested_at
+        TEXT sent_at
+        TEXT executed_at "set only on ESP32 confirmation"
+        TEXT error_message
+        TEXT created_at
+    }
